@@ -3,6 +3,7 @@ package repositorios
 import (
 	"api/src/modelos"
 	"database/sql"
+	"fmt"
 )
 
 // >>> REPOSITORIOS É A CAMADA QUE VAI INTERAGIR COM O BANCO DE DADOS <<< //
@@ -16,6 +17,20 @@ type Usuarios struct {
 func NovoRepositorioDeUsuarios(db *sql.DB) *Usuarios {
 	return &Usuarios{db}
 }
+
+/*
+	A função NovoRepositorioDeUsuarios retorna um ponteiro para uma estrutura usuarios
+	que contém um objeto *sql.DB como campo. Aqui está uma explicação passo a passo do código:
+
+    func NovoRepositorioDeUsuarios(db *sql.DB) *usuarios: Esta linha define a função NovoRepositorioDeUsuarios
+	que recebe um ponteiro para um objeto *sql.DB como argumento e retorna um ponteiro para uma estrutura usuarios.
+
+    return &usuarios{db}: Nesta linha, a função retorna um ponteiro para a estrutura usuarios.
+	A estrutura usuarios é criada usando um literal de estrutura (usuarios{}), e o campo db é inicializado
+	com o valor do objeto db passado como argumento. O & antes de usuarios{db} retorna o endereço de memória
+	da estrutura usuarios, criando um ponteiro para essa estrutura. Isso permite que o chamador da função receba
+	um ponteiro para a estrutura usuarios que contém o objeto *sql.DB passado como argumento.
+*/
 
 // Criar insere um usuario no banco de dados
 func (repositorio Usuarios) Criar(usuario modelos.Usuario) (uint64, error) {
@@ -39,16 +54,34 @@ func (repositorio Usuarios) Criar(usuario modelos.Usuario) (uint64, error) {
 	return uint64(ultimoIDInserido), nil
 }
 
-/*
-	A função NovoRepositorioDeUsuarios retorna um ponteiro para uma estrutura usuarios
-	que contém um objeto *sql.DB como campo. Aqui está uma explicação passo a passo do código:
+// Buscar traz todos os usuarios que atendem o filtro de nome ou nick
+func (repositorio Usuarios) Buscar(nomeOuNick string) ([]modelos.Usuario, error) {
+	nomeOuNick = fmt.Sprintf("%%%s%%", nomeOuNick) // %nomeOuNick%
 
-    func NovoRepositorioDeUsuarios(db *sql.DB) *usuarios: Esta linha define a função NovoRepositorioDeUsuarios
-	que recebe um ponteiro para um objeto *sql.DB como argumento e retorna um ponteiro para uma estrutura usuarios.
+	linhas, erro := repositorio.db.Query("SELECT id, nome, nick, email, criadoEm FROM usuarios WHERE nome LIKE ? OR nick LIKE ?", nomeOuNick, nomeOuNick)
+	if erro != nil {
+		return nil, erro
+	}
 
-    return &usuarios{db}: Nesta linha, a função retorna um ponteiro para a estrutura usuarios.
-	A estrutura usuarios é criada usando um literal de estrutura (usuarios{}), e o campo db é inicializado
-	com o valor do objeto db passado como argumento. O & antes de usuarios{db} retorna o endereço de memória
-	da estrutura usuarios, criando um ponteiro para essa estrutura. Isso permite que o chamador da função receba
-	um ponteiro para a estrutura usuarios que contém o objeto *sql.DB passado como argumento.
-*/
+	defer linhas.Close()
+
+	var usuarios []modelos.Usuario
+
+	for linhas.Next() {
+		var usuario modelos.Usuario
+
+		if erro = linhas.Scan(
+			&usuario.ID,
+			&usuario.Nome,
+			&usuario.Nick,
+			&usuario.Email,
+			&usuario.CriadoEm,
+		); erro != nil {
+			return nil, erro
+		}
+
+		usuarios = append(usuarios, usuario)
+	}
+
+	return usuarios, nil
+}
