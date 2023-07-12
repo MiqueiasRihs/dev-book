@@ -164,3 +164,19 @@ func (repositorio Usuarios) BuscarPorEmail(email string) (modelos.Usuario, error
 
 	return usuario, nil
 }
+
+// Seguir permite que um usuário siga outro
+func (repositorio Usuarios) Seguir(UsuarioID, seguidorID uint64) error {
+	statement, erro := repositorio.db.Prepare("INSERT IGNORE INTO seguidores (usuario_id, seguidor_id) VALUES (?, ?)")
+	if erro != nil {
+		return erro
+	}
+
+	defer statement.Close()
+
+	if _, erro = statement.Exec(UsuarioID, seguidorID); erro != nil {
+		return erro
+	}
+
+	return nil
+}
