@@ -196,3 +196,33 @@ func (repositorio Usuarios) PararDeSeguir(UsuarioID, seguidorID uint64) error {
 
 	return nil
 }
+
+// BuscarSeguidores traz todos os seguidores de um usuário
+func (repositorio Usuarios) BuscarSeguidores(UsuarioID uint64) ([]modelos.Usuario, error) {
+	linhas, erro := repositorio.db.Query(`
+		SELECT u.id, u.nome, u.nick, u.email, u.criadoEm 
+		from usuarios u inner join seguidores s on u.id = s.seguidor_id where s.usuario_id = ?
+	`, UsuarioID)
+	if erro != nil {
+		return nil, erro
+	}
+
+	var usuarios []modelos.Usuario
+	for linhas.Next() {
+		var usuario modelos.Usuario
+
+		if erro = linhas.Scan(
+			&usuario.ID,
+			&usuario.Nome,
+			&usuario.Nick,
+			&usuario.Email,
+			&usuario.CriadoEm,
+		); erro != nil {
+			return nil, erro
+		}
+
+		usuarios = append(usuarios, usuario)
+	}
+
+	return usuarios, nil
+}
