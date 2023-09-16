@@ -34,3 +34,64 @@ func (repositorio Publicacoes) Criar(publicacao modelos.Publicacao) (uint64, err
 
 	return uint64(ultimoIDInserido), nil
 }
+
+func (repositorio Publicacoes) BuscarPorID(publicacaoID uint64) (modelos.Publicacao, error) {
+	linha, erro := repositorio.db.Query(`
+		SELECT p.*, u.nick FROM
+		publicacoes p INNER JOIN usuarios u
+		on u.id = p.autor_id WHERE p.id = ?`,
+		publicacaoID)
+
+	if erro != nil {
+		return modelos.Publicacao{}, erro
+	}
+	defer linha.Close()
+
+	var publicacao modelos.Publicacao
+
+	if linha.Next() {
+		if erro = linha.Scan(
+			&publicacao.ID,
+			&publicacao.Titulo,
+			&publicacao.Conteudo,
+			&publicacao.AutorID,
+			&publicacao.Curtidas,
+			&publicacao.CriadaEm,
+			&publicacao.AutorNick,
+		); erro != nil {
+			return modelos.Publicacao{}, erro
+		}
+	}
+
+	return publicacao, nil
+}
+
+// func (repositorio Publicacoes) BuscarPuplicacoes() (modelos.Publicacao, error) {
+// 	linha, erro := repositorio.db.Query(`
+// 		SELECT p.*, u.nick FROM
+// 		publicacoes p INNER JOIN usuarios u
+// 		on u.id = p.autor_id`)
+
+// 	if erro != nil {
+// 		return modelos.Publicacao{}, erro
+// 	}
+// 	defer linha.Close()
+
+// 	var publicacao []modelos.Publicacao
+// 	if linha.Next() {
+// 		if erro = linha.Scan(
+// 			&publicacao.ID,
+// 			&publicacao.Titulo,
+// 			&publicacao.Conteudo,
+// 			&publicacao.AutorID,
+// 			&publicacao.Curtidas,
+// 			&publicacao.CriadaEm,
+// 			&publicacao.AutorNick,
+// 		); erro != nil {
+// 			return modelos.Publicacao{}, erro
+// 		}
+// 	}
+
+// 	return publicacao, nil
+
+// }

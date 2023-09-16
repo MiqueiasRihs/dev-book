@@ -9,6 +9,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func CriarPublicacao(w http.ResponseWriter, r *http.Request) {
@@ -55,18 +58,54 @@ func CriarPublicacao(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func BuscarPublicacoes(w http.ResponseWriter, r *http.Request) {
-
-}
-
 func BuscarPublicacao(w http.ResponseWriter, r *http.Request) {
+	parametros := mux.Vars(r)
+	publicacaoID, erro := strconv.ParseUint(parametros["publicacaoID"], 10, 64)
+	if erro != nil {
+		respostas.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	db, erro := banco.Conectar()
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	repositorio := repositorios.NovoRepositorioDePublicacoes(db)
+	publicacao, erro := repositorio.BuscarPorID(publicacaoID)
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+	}
+
+	respostas.JSON(w, http.StatusOK, publicacao)
 
 }
 
-func AtualizarPublicacao(w http.ResponseWriter, r *http.Request) {
+func BuscarPublicacoes(w http.ResponseWriter, r *http.Request) {
+	// usuarioID, erro := autenticacao.ExtrairUsuarioID(r)
+	// if erro != nil {
+	// 	respostas.Erro(w, http.StatusUnauthorized, erro)
+	// 	return
+	// }
+
+	// db, erro := banco.Conectar()
+	// if erro != nil {
+	// 	respostas.Erro(w, http.StatusInternalServerError, erro)
+	// 	return
+	// }
+	// defer db.Close()
+
+	// repositorio := repositorios.NovoRepositorioDePublicacoes(db)
+	// publicacoes, erro := repositorio.Buscar(usuarioID)
+	// if erro != nil {
+	// 	respostas.Erro(w, http.StatusInternalServerError, erro)
+	// }
+
+	// respostas.JSON(w, http.StatusOK, publicacoes)
 
 }
 
-func DeletarPublicacao(w http.ResponseWriter, r *http.Request) {
-
-}
+func AtualizarPublicacao(w http.ResponseWriter, r *http.Request) {}
+func DeletarPublicacao(w http.ResponseWriter, r *http.Request)   {}
